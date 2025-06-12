@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:git_app/app/data/models/models_export.dart';
 import 'package:git_app/app/presentation/controllers/controllers_export.dart';
-import 'package:git_app/app/presentation/controllers/historic_controller.dart';
 import 'package:git_app/core/dependecies/dependency_injection.dart';
 import 'package:go_router/go_router.dart';
 
@@ -90,7 +89,16 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF24292F),
               ),
               title: Text('Histórico de buscas'),
-              onTap: () => context.push('/historic'),
+              onTap: () {
+                context.push('/historic').then((value) {
+                  if (value != null) {
+                    _usernameTextController.value =
+                        TextEditingValue(text: value.toString());
+                  }
+                });
+
+                context.pop();
+              },
             ),
             ListTile(
               leading: Icon(

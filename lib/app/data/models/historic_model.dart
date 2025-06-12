@@ -22,4 +22,8 @@ class HistoricModel {
       userModel: UserModel.fromMap(Map<String, dynamic>.from(map['data'])),
     );
   }
+
+  int compareTo(HistoricModel other) {
+    return dateTime.compareTo(other.dateTime);
+  }
 }
