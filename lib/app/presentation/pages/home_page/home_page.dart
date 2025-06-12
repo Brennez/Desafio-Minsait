@@ -16,6 +16,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final List<String> languages = [
+    'Dart',
+    'JavaScript',
+    'Python',
+    'Java',
+    'C#',
+    'C++',
+    'Go',
+    'Rust',
+    'Swift',
+    'TypeScript'
+  ];
+
   final UserInfoController _userInfoController = injector<UserInfoController>();
 
   final CacheController _cacheController = injector<CacheController>();
@@ -23,6 +36,10 @@ class _HomePageState extends State<HomePage> {
   final HistoricController _historicController = injector<HistoricController>();
 
   final TextEditingController _usernameTextController = TextEditingController();
+
+  String? selectedLanguage;
+
+  bool _showAdvancedOptions = false;
 
   Future<void> _handleSearch() async {
     final UserModel? cachedUser =
@@ -117,82 +134,106 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _usernameTextController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 10),
-                        suffixIcon: Icon(Icons.search,
-                            color: Colors.grey.shade600, size: 20),
-                        hintText: 'Digite um username',
-                        hintStyle: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 16,
-                        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      Column(
+                        children: [
+                          CustomSearchComponent(
+                            textEditingController: _usernameTextController,
+                            hintText: "Digite seu username",
+                          ),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                PrimaryButton(
+                                  onTap: () => _handleSearch(),
+                                  labelText: "Buscar",
+                                ),
+                                PrimaryButton(
+                                  onTap: () {
+                                    setState(() {
+                                      _showAdvancedOptions =
+                                          !_showAdvancedOptions;
+                                    });
+                                  },
+                                  labelText: "Avançado",
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Visibility(
+                        visible: _showAdvancedOptions,
+                        child: Column(
+                          children: [
+                            CustomSearchComponent(
+                              textEditingController: TextEditingController(),
+                              hintText: "Localização",
+                              iconData: Icons.location_on_outlined,
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            LanguageDropdownComponent(onSelected: (value) {}),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            CustomSliderComponent(
+                              title: "Seguidores",
+                              onChanged: (value) {},
+                            ),
+                            CustomSliderComponent(
+                              title: "Repositórios",
+                              onChanged: (value) {},
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF57606A),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    _handleSearch();
-                  },
-                  child: const Text(
-                    'Buscar',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Obx(
-              () {
-                if (_userInfoController.screenState == ScreenState.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (_userInfoController.userInfo != null) {
-                  return UserCardComponent(
-                    user: _userInfoController.userInfo!,
-                  );
-                } else if (_userInfoController.screenState ==
-                    ScreenState.error) {
-                  return Center(
+              ),
+              const SizedBox(height: 20),
+              Obx(
+                () {
+                  if (_userInfoController.screenState == ScreenState.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (_userInfoController.userInfo != null) {
+                    return UserCardComponent(
+                      user: _userInfoController.userInfo!,
+                    );
+                  } else if (_userInfoController.screenState ==
+                      ScreenState.error) {
+                    return Center(
+                      child: Text(
+                        "Erro ao buscar usuário",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+                  return const Center(
                     child: Text(
-                      "Erro ao buscar usuário",
-                      style: TextStyle(color: Colors.red),
+                      "Digite um username para buscar",
+                      style: TextStyle(color: Colors.grey),
                     ),
                   );
-                }
-                return const Center(
-                  child: Text(
-                    "Digite um username para buscar",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                );
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
