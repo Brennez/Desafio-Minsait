@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:git_app/app/data/datasources/remote_datasource/implementations/implementations_export.dart';
 import 'package:git_app/app/data/datasources/remote_datasource/interfaces/interfaces_export.dart';
+import 'package:git_app/app/domain/repositories/implementations/historic_repository_impl.dart';
 import 'package:git_app/core/http/implementation/http_client_impl.dart';
 import 'package:git_app/core/http/interface/http_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/data/datasources/local_datasource/implementations/implementations.dart';
 import '../../app/data/datasources/local_datasource/interfaces/interfaces_export.dart';
@@ -24,6 +24,10 @@ void setupDependencies() {
   injector.registerLazySingleton<CacheLocalDatasource>(
       () => CacheLocalDatasourceImpl());
 
+  injector.registerLazySingleton<LocalHistoricDatasource>(
+    () => LocalHistoricDatasourceImpl(),
+  );
+
   // repositories
   injector.registerLazySingleton<UserInfoRepository>(() =>
       UserInfoRepositoryImpl(
@@ -32,10 +36,17 @@ void setupDependencies() {
   injector.registerLazySingleton<CacheRepository>(() => CacheRepositoryImpl(
       cacheLocalDatasource: injector<CacheLocalDatasource>()));
 
+  injector.registerLazySingleton<HistoricRepository>(() =>
+      HistoricRepositoryImpl(
+          localHistoric: injector<LocalHistoricDatasource>()));
+
   // controllers
   injector.registerLazySingleton<UserInfoController>(
       () => UserInfoController(injector<UserInfoRepository>()));
 
   injector.registerLazySingleton(
       () => CacheController(injector<CacheRepository>()));
+
+  injector.registerLazySingleton(() =>
+      HistoricController(historicRepository: injector<HistoricRepository>()));
 }

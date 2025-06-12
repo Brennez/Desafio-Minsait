@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:git_app/app/data/models/models_export.dart';
 import 'package:git_app/app/presentation/controllers/controllers_export.dart';
+import 'package:git_app/app/presentation/controllers/historic_controller.dart';
 import 'package:git_app/core/dependecies/dependency_injection.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../enums/screen_state_enum.dart';
 import 'components/components_export.dart';
@@ -19,6 +21,8 @@ class _HomePageState extends State<HomePage> {
 
   final CacheController _cacheController = injector<CacheController>();
 
+  final HistoricController _historicController = injector<HistoricController>();
+
   final TextEditingController _usernameTextController = TextEditingController();
 
   Future<void> _handleSearch() async {
@@ -27,14 +31,27 @@ class _HomePageState extends State<HomePage> {
 
     if (cachedUser != null) {
       _userInfoController.setUserInfo(cachedUser);
-    } else {
+    }
+
+    if (cachedUser == null) {
       await _userInfoController.getUserInfo(_usernameTextController.text);
 
       if (_userInfoController.userInfo != null) {
         await _cacheController.saveUserCache(_usernameTextController.text,
             _userInfoController.userInfo!.toMap());
+
+        _historicController.saveHistoric(_usernameTextController.text,
+            DateTime.now(), _userInfoController.userInfo!.toMap());
       }
     }
+
+    setState(() {});
+  }
+
+  Future<void> _handleClearCache() async {
+    await _cacheController.clearAllCache();
+    _userInfoController.setUserInfo(null);
+    _usernameTextController.clear();
   }
 
   @override
@@ -73,7 +90,7 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF24292F),
               ),
               title: Text('Histórico de buscas'),
-              onTap: () {},
+              onTap: () => context.push('/historic'),
             ),
             ListTile(
               leading: Icon(
@@ -83,7 +100,8 @@ class _HomePageState extends State<HomePage> {
               title: Text('Limpar cache'),
               onTap: () async {
                 await _handleClearCache();
-                Navigator.pop(context);
+
+                setState(() => context.pop(context));
               },
             ),
           ],
@@ -132,7 +150,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   onPressed: () {
                     _handleSearch();
-                    FocusScope.of(context).unfocus();
                   },
                   child: const Text(
                     'Buscar',
@@ -171,11 +188,5 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleClearCache() async {
-    await _cacheController.clearAllCache();
-    _userInfoController.setUserInfo(null);
-    _usernameTextController.clear();
   }
 }
