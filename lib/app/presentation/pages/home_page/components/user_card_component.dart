@@ -41,7 +41,7 @@ class _UserCardComponentState extends State<UserCardComponent> {
                   backgroundImage: NetworkImage(widget.user.profilePictureUrl ??
                       'https://avatars.githubusercontent.com/u/9919?v=4'),
                 ),
-                title: Text(widget.user.name),
+                title: Text(widget.user.name ?? 'Sem nome'),
                 subtitle: Text(widget.user.bio ?? 'Sem biografia'),
                 onTap: () => _toggleExpansion(),
               );
@@ -50,7 +50,7 @@ class _UserCardComponentState extends State<UserCardComponent> {
               children: [
                 ListTile(
                   title: const Text('Username'),
-                  subtitle: Text(widget.user.username),
+                  subtitle: Text(widget.user.username ?? "Sem username"),
                   leading: Icon(Icons.alternate_email_rounded,
                       color: Colors.deepPurple),
                 ),
