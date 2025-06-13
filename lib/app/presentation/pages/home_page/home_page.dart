@@ -5,6 +5,7 @@ import 'package:git_app/app/presentation/controllers/controllers_export.dart';
 import 'package:git_app/core/dependecies/dependency_injection.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../enums/enums_export.dart';
 import '../../enums/screen_state_enum.dart';
 import 'components/components_export.dart';
 
@@ -16,19 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<String> languages = [
-    'Dart',
-    'JavaScript',
-    'Python',
-    'Java',
-    'C#',
-    'C++',
-    'Go',
-    'Rust',
-    'Swift',
-    'TypeScript'
-  ];
-
   final UserInfoController _userInfoController = injector<UserInfoController>();
 
   final CacheController _cacheController = injector<CacheController>();
@@ -37,9 +25,14 @@ class _HomePageState extends State<HomePage> {
 
   final TextEditingController _usernameTextController = TextEditingController();
 
-  String? selectedLanguage;
+  final TextEditingController _locationTextController = TextEditingController();
 
-  bool _showAdvancedOptions = false;
+  String? _selectedLanguage;
+
+  int? _minFollowers;
+  int? _minRepos;
+
+  FilterType _filterType = FilterType.none;
 
   Future<void> _handleSearch() async {
     final UserModel? cachedUser =
@@ -47,18 +40,35 @@ class _HomePageState extends State<HomePage> {
 
     if (cachedUser != null) {
       _userInfoController.setUserInfo(cachedUser);
+      return;
     }
 
-    if (cachedUser == null) {
+    bool isAdvancedSearch = _filterType != FilterType.none &&
+        (_selectedLanguage != null ||
+            _locationTextController.text.trim().isNotEmpty ||
+            (_minFollowers != null && _minFollowers! > 0) ||
+            (_minRepos != null && _minRepos! > 0));
+
+    if (isAdvancedSearch) {
+      final query = buildQuery(
+        _locationTextController.text.trim(),
+        _selectedLanguage,
+        _minFollowers,
+        _minRepos,
+      );
+
+      await _userInfoController.getAdvancedUserInfo(
+          _usernameTextController.text, query, _filterType);
+    } else {
       await _userInfoController.getUserInfo(_usernameTextController.text);
+    }
 
-      if (_userInfoController.userInfo != null) {
-        await _cacheController.saveUserCache(_usernameTextController.text,
-            _userInfoController.userInfo!.toMap());
+    if (_userInfoController.userInfo != null) {
+      await _cacheController.saveUserCache(
+          _usernameTextController.text, _userInfoController.userInfo!.toMap());
 
-        _historicController.saveHistoric(_usernameTextController.text,
-            DateTime.now(), _userInfoController.userInfo!.toMap());
-      }
+      _historicController.saveHistoric(_usernameTextController.text,
+          DateTime.now(), _userInfoController.userInfo!.toMap());
     }
 
     setState(() {});
@@ -70,6 +80,35 @@ class _HomePageState extends State<HomePage> {
     _usernameTextController.clear();
   }
 
+  void clearAllFields() {
+    _selectedLanguage == null;
+    _locationTextController.text = "";
+    _minFollowers = 0;
+    _selectedLanguage = null;
+    _minRepos = 0;
+  }
+
+  String buildQuery(
+      String? location, String? language, int? minFollowers, int? minRepos) {
+    String query = '';
+    if (location != null && location.isNotEmpty) {
+      query += 'location:$location+';
+    }
+    if (language != null && language.isNotEmpty) {
+      query += 'language:$language+';
+    }
+    if (minFollowers != null) {
+      query += 'followers:>$minFollowers+';
+    }
+    if (minRepos != null) {
+      query += 'repos:>$minRepos+';
+    }
+    query = query.trim().replaceAll(' ', '+');
+    if (query.endsWith('+')) query = query.substring(0, query.length - 1);
+
+    return query;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,132 +116,109 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Git App'),
         centerTitle: true,
       ),
-      endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color(0xFF57606A),
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home, color: Color(0xFF24292F)),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.history,
-                color: Color(0xFF24292F),
-              ),
-              title: Text('Histórico de buscas'),
-              onTap: () {
-                context.push('/historic').then((value) {
-                  if (value != null) {
-                    _usernameTextController.value =
-                        TextEditingValue(text: value.toString());
-                  }
-                });
+      endDrawer: DrawerComponnent(
+        onTapHome: () => context.pop(),
+        onTapHistoric: () {
+          context.push('/historic').then((value) {
+            if (value != null) {
+              _usernameTextController.value =
+                  TextEditingValue(text: value.toString());
+            }
+          });
 
-                context.pop();
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.clear_all,
-                color: Color(0xFF24292F),
-              ),
-              title: Text('Limpar cache'),
-              onTap: () async {
-                await _handleClearCache();
+          context.pop();
+        },
+        onTapClearCache: () async {
+          await _handleClearCache();
 
-                setState(() => context.pop(context));
-              },
-            ),
-          ],
-        ),
+          setState(() => context.pop(context));
+        },
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    children: [
-                      Column(
-                        children: [
-                          CustomSearchComponent(
-                            textEditingController: _usernameTextController,
-                            hintText: "Digite seu username",
-                          ),
-                          const SizedBox(width: 10),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                PrimaryButton(
-                                  onTap: () => _handleSearch(),
-                                  labelText: "Buscar",
-                                ),
-                                PrimaryButton(
-                                  onTap: () {
-                                    setState(() {
-                                      _showAdvancedOptions =
-                                          !_showAdvancedOptions;
-                                    });
-                                  },
-                                  labelText: "Avançado",
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Visibility(
-                        visible: _showAdvancedOptions,
-                        child: Column(
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 600,
+                ),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      children: [
+                        Column(
                           children: [
                             CustomSearchComponent(
-                              textEditingController: TextEditingController(),
-                              hintText: "Localização",
-                              iconData: Icons.location_on_outlined,
+                              textEditingController: _usernameTextController,
+                              hintText: "Digite seu username",
                             ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            LanguageDropdownComponent(onSelected: (value) {}),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            CustomSliderComponent(
-                              title: "Seguidores",
-                              onChanged: (value) {},
-                            ),
-                            CustomSliderComponent(
-                              title: "Repositórios",
-                              onChanged: (value) {},
+                            const SizedBox(width: 10),
+                            FilterTypeSelector(onChanged: (value) {
+                              setState(() {
+                                _filterType = value;
+                                clearAllFields();
+                              });
+                            }),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Visibility(
+                          visible: _filterType == FilterType.location,
+                          child: CustomSearchComponent(
+                            textEditingController: _locationTextController,
+                            hintText: "Localização",
+                            iconData: Icons.location_on_outlined,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Visibility(
+                          visible: _filterType == FilterType.language,
+                          child: LanguageDropdownComponent(onSelected: (value) {
+                            _selectedLanguage = value;
+                          }),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Visibility(
+                          visible: _filterType == FilterType.followers,
+                          child: CustomSliderComponent(
+                            title: "Seguidores",
+                            onChanged: (value) {
+                              _minFollowers = value;
+                            },
+                          ),
+                        ),
+                        Visibility(
+                          visible: _filterType == FilterType.repos,
+                          child: CustomSliderComponent(
+                            title: "Repositórios",
+                            onChanged: (value) {
+                              _minRepos = value;
+                            },
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: PrimaryButton(
+                                onTap: () => _handleSearch(),
+                                labelText: "Buscar",
+                              ),
                             ),
                           ],
                         ),
-                      )
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -219,7 +235,7 @@ class _HomePageState extends State<HomePage> {
                       ScreenState.error) {
                     return Center(
                       child: Text(
-                        "Erro ao buscar usuário",
+                        "Usuário não encontrado",
                         style: TextStyle(color: Colors.red),
                       ),
                     );

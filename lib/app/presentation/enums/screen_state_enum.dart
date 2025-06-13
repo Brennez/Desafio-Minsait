@@ -3,4 +3,5 @@ enum ScreenState {
   loading,
   error,
   success,
+  notFound,
 }

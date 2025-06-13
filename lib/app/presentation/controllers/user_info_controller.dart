@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import 'package:git_app/app/data/models/models_export.dart';
 import 'package:git_app/app/domain/repositories/interfaces/interfaces_export.dart';
-import 'package:git_app/app/presentation/enums/screen_state_enum.dart';
+import 'package:git_app/app/presentation/enums/enums_export.dart';
+import 'package:git_app/core/exceptions/not_found_exception.dart';
 
 class UserInfoController extends GetxController {
   final UserInfoRepository _userInfoRepository;
@@ -27,9 +28,24 @@ class UserInfoController extends GetxController {
     try {
       userInfo = await _userInfoRepository.getUserInfo(username);
       setScreenState(ScreenState.success);
+    } on NotFoundException catch (e) {
+      setScreenState(ScreenState.notFound);
     } catch (e) {
       setScreenState(ScreenState.error);
-      rethrow;
+    }
+  }
+
+  Future<void> getAdvancedUserInfo(
+      String username, String? data, FilterType type) async {
+    setScreenState(ScreenState.loading);
+    try {
+      userInfo =
+          await _userInfoRepository.getAdvancedUserInfo(username, data, type);
+      setScreenState(ScreenState.success);
+    } on NotFoundException catch (e) {
+      setScreenState(ScreenState.notFound);
+    } catch (e) {
+      setScreenState(ScreenState.error);
     }
   }
 }

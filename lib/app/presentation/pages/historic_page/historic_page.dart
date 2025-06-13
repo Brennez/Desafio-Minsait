@@ -66,7 +66,7 @@ class _HistoricPageState extends State<HistoricPage> {
                                 size: 20,
                               ),
                               SizedBox(width: 10),
-                              Text(search.userModel.username),
+                              Text(search.userModel.username ?? "Sem nome"),
                             ],
                           ),
                           subtitle: Padding(

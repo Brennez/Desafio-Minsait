@@ -1,12 +1,12 @@
 class UserEntity {
-  final int id;
-  final String name;
-  final String username;
+  final int? id;
+  final String? name;
+  final String? username;
   final String? bio;
   final String? location;
-  final int followers;
-  final int following;
-  final int repositories;
+  final int? followers;
+  final int? following;
+  final int? repositories;
   final String? email;
   final String? profilePictureUrl;
 

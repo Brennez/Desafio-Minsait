@@ -13,18 +13,18 @@ class UserModel extends UserEntity {
       required super.bio,
       required super.location});
 
-  factory UserModel.fromMap(Map<String, dynamic> json) {
+  factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      username: json['login'] as String,
-      followers: json['followers'] as int,
-      following: json['following'] as int,
-      repositories: json['public_repos'] as int,
-      email: json['email'] as String?,
-      profilePictureUrl: json['avatar_url'] as String?,
-      bio: json['bio'] as String?,
-      location: json['location'] as String?,
+      id: map['id'] as int,
+      name: map['name'] as String?,
+      username: map['login'] as String?,
+      followers: map['followers'] as int?,
+      following: map['following'] as int?,
+      repositories: map['public_repos'] as int?,
+      email: map['email'] as String?,
+      profilePictureUrl: map['avatar_url'] as String?,
+      bio: map['bio'] as String?,
+      location: map['location'] as String?,
     );
   }
 
